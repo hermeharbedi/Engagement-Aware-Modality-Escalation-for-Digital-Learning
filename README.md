@@ -3,7 +3,7 @@
 
 A multi-modal digital learning assistant that combines real-time engagement detection with intelligent content retrieval and dialogue. This project demonstrates how webcam-based student engagement sensing can be paired with an LLM-powered learning companion to dynamically support learners of sorting algorithms.
 
-## 🚀 Project Overview
+## Project Overview
 
 This repository implements an engagement-aware digital learning system that:
 - Detects student engagement in real time using webcam video and a YOLO-based model pipeline.
@@ -12,7 +12,7 @@ This repository implements an engagement-aware digital learning system that:
 - Supports text, image, and video learning modalities for algorithm education.
 <p align="center"> <img width="683" height="235" alt="Screenshot 2026-05-29 at 11 18 39 PM" src="https://github.com/user-attachments/assets/bc84abc2-aefc-4833-b571-35b9d69b8fe2" /></p>
 
-## ✨ Key Features
+## Key Features
 
 - **Real-time Engagement Monitoring**
   - Person detection with `YOLOv8`
@@ -33,7 +33,7 @@ This repository implements an engagement-aware digital learning system that:
   - PDF text extraction and chunking with `preprocess.py`
   - Generates `chunks.pkl`, `embeddings.npy`, and `faiss.index`
 
-## 📁 Repository Structure
+## Repository Structure
 
 - `Final_Code.py` — Main Streamlit interface with algorithm selection, content retrieval, and camera management
 - `preprocess.py` — Preprocessing script for PDF text extraction, embedding generation, and FAISS indexing
@@ -53,14 +53,14 @@ This repository implements an engagement-aware digital learning system that:
 <p align="center"> <img width="809" height="172" alt="Screenshot 2026-05-29 at 11 17 07 PM" src="https://github.com/user-attachments/assets/b94512db-641e-46db-b670-9f16c541b204" /></p>
 
 
-## 🧠 Requirements
+## Requirements
 
 - Python 3.9+
 - Webcam access for real-time engagement tracking
 - `sorting_algorithms.pdf` present in the repository for preprocessing
 - Google Generative AI API key in `.env`
 
-## � Study Design & Evaluation
+## Study Design & Evaluation
 
 This project also reflects a controlled user study comparing two instructional conditions:
 
@@ -89,3 +89,9 @@ This project also reflects a controlled user study comparing two instructional c
 - Participants reported higher engagement, satisfaction, and concentration with the adaptive interface.
 - Adaptive modality changes were generally perceived as helpful rather than distracting.
 - Reported limitations focused on responsiveness and smoother disengagement detection.
+
+## Contributions and Acknowledgement
+
+- The project is a fruit of combined efforts put by Ms. Saumya Yadav (PhD, IIITD) and Mr. Hermehar P.S. Bedi (PhD, IIITD).
+- The contributors would also like to acknowledge the efforts put in by Mr. Harsh Bhardaj (B.Tech, IIITD) and Mr. Dharani Kumar S. (B.Tech, IIITD) during the development phase of the initial version as the course project.
+- This was started as a course project for Human Centered AI course offered by Dr. Rajiv Ratn Shah at IIIT Delhi.
