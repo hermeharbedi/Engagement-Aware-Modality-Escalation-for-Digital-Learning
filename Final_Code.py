@@ -124,6 +124,14 @@ if "camera_started" not in st.session_state:
     st.session_state.camera_started = False
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "show_switch_popup" not in st.session_state:
+    st.session_state.show_switch_popup = False
+
+if "popup_start_time" not in st.session_state:
+    st.session_state.popup_start_time = None
+
+if "next_content_type" not in st.session_state:
+    st.session_state.next_content_type = None
 
 # Dropdown
 topic = st.selectbox("Select a Sorting Algorithm", [
@@ -148,10 +156,12 @@ image_paths.sort()
 
 # Camera Feed and Engagement Tracking
 cap = cv2.VideoCapture(0)  # Access camera feed
-content_type = "text"  # Start with text
+if "content_type" not in st.session_state:
+    st.session_state.content_type = "text"
 last_switch_time = time.time()
-not_engaged_dominant_since = None
-switch_interval = 10  # Reduced for testing, set back to 120
+if "not_engaged_dominant_since" not in st.session_state:
+    st.session_state.not_engaged_dominant_since = None
+switch_interval = 300  
 content_displayed = False
 engagement_scores = deque(maxlen=30)  # Using a shorter window for faster responsiveness
 
@@ -180,6 +190,7 @@ placeholder = left_column.empty()
 text_placeholder = right_column.empty()
 image_placeholder = right_column.empty()
 video_placeholder = right_column.empty()
+popup_placeholder = right_column.empty()
 
 # LLM Chat Assistant (defined outside the conditional start)
 with right_column:
@@ -249,47 +260,86 @@ while st.session_state.run_camera:
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
     # Content Switching Logic based on average engagement
-    if person_detected and avg_engagement < 50:  # Only switch if a person is detected and not engaged
-        if not_engaged_dominant_since is None:
-            not_engaged_dominant_since = time.time()
-        elif time.time() - not_engaged_dominant_since >= switch_interval:
-            if content_type == "text":
+    if person_detected and avg_engagement < 75 and not st.session_state.show_switch_popup:  # Only switch if a person is detected and not engaged
+        if st.session_state.not_engaged_dominant_since is None:
+            st.session_state.not_engaged_dominant_since = time.time()
+        elif time.time() - st.session_state.not_engaged_dominant_since >= switch_interval:
+            st.session_state.show_switch_popup = True
+            st.session_state.popup_start_time = time.time()
+
+            if st.session_state.content_type == "text":
+                st.session_state.next_content_type = "image"
+
+            elif st.session_state.content_type == "image":
+                st.session_state.next_content_type = "video"
+
+            elif st.session_state.content_type == "video":
+                st.session_state.next_content_type = "text"
+
+            st.session_state.not_engaged_dominant_since = None
+    elif person_detected and avg_engagement >= 75:
+    # User became engaged again → restart timer
+        st.session_state.not_engaged_dominant_since = None
+
+    elif not person_detected:
+        # Nobody in front of camera → restart timer
+        st.session_state.not_engaged_dominant_since = None
+    
+    if st.session_state.show_switch_popup:
+
+        # Hide previous modality
+        text_placeholder.empty()
+        image_placeholder.empty()
+        video_placeholder.empty()
+
+        popup_placeholder.warning(
+            "⚠️ Low engagement detected.\n\n"
+            "The learning modality is being changed to improve your learning experience."
+        )
+
+        if time.time() - st.session_state.popup_start_time >= 3:
+
+            popup_placeholder.empty()
+
+            st.session_state.show_switch_popup = False
+
+            st.session_state.content_type = st.session_state.next_content_type
+
+            # -------- SHOW NEW CONTENT --------
+
+            if st.session_state.content_type == "text":
+
+                with text_placeholder.container():
+                    st.subheader(f"📘 {topic}")
+                    st.markdown(retrieve_text_data_llm(topic))
+
+                image_placeholder.empty()
+                video_placeholder.empty()
+
+            elif st.session_state.content_type == "image":
+
                 with image_placeholder.container():
                     st.subheader("🖼️ Visual Steps")
-                    img_paths_llm = retrieve_image_data_llm(topic) # Use LLM for image retrieval
-                    if img_paths_llm:
-                        for img_path in img_paths_llm:
-                            try:
-                                img = Image.open(img_path)
-                                st.image(img, use_column_width=True)
-                            except Exception as e:
-                                st.error(f"Error displaying image {os.path.basename(img_path)}: {e}")
-                text_placeholder.empty()
-                video_placeholder.empty()
-                content_type = "image"
-            elif content_type == "image":
-                with video_placeholder.container():
-                    video_link_llm = retrieve_video_data_llm(topic) # Use LLM for video retrieval
-                    if video_link_llm:
-                        st.subheader("🎥 Video Tutorial")
-                        st.video(video_link_llm)
-                text_placeholder.empty()
-                image_placeholder.empty()
-                content_type = "video"
-            elif content_type == "video":
-                with text_placeholder.container():
-                    algorithm_details_llm = retrieve_text_data_llm(topic) # Use LLM for text retrieval
-                    st.subheader(f"📘 {topic}")
-                    st.markdown(algorithm_details_llm)
-                image_placeholder.empty()
-                video_placeholder.empty()
-                content_type = "text"
-            not_engaged_dominant_since = None  # Reset timer
-    elif person_detected and avg_engagement >= 50:
-        not_engaged_dominant_since = None  # Reset the timer if engagement improves
-    elif not person_detected:
-        not_engaged_dominant_since = None # Reset if no person is detected
 
+                    for img_path in retrieve_image_data_llm(topic):
+                        img = Image.open(img_path)
+                        st.image(img, use_column_width=True)
+
+                text_placeholder.empty()
+                video_placeholder.empty()
+
+            elif st.session_state.content_type == "video":
+
+                with video_placeholder.container():
+
+                    video = retrieve_video_data_llm(topic)
+
+                    if video:
+                        st.subheader("🎥 Video Tutorial")
+                        st.video(video)
+
+                text_placeholder.empty()
+                image_placeholder.empty()
     # Display the camera feed with engagement annotations on the left
     frame_image = Image.fromarray(cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB))
     placeholder.image(frame_image, channels="RGB")
